@@ -49,7 +49,71 @@ def most_successful(df,sport):
     if sport!='Overall':
         temp_df=temp_df[temp_df['Sport'] ==sport]
 
-    x=temp_df['Name'].value_counts().reset_index().head(15).merge(df,left_on='Name',right_on='Name',how='left')[['Name','count','Sport',"region"]].drop_duplicates()
+    x=temp_df['Name'].value_counts().reset_index().head(15).merge(df,left_on='Name',right_on='Name',how='left')[['Name','count','Sport',"region"]].drop_duplicates('Name')
     x.rename(columns={'count':'Total medals',"region":'Country'},inplace=True)
     return x
+
+def year_wise_medal_tally(df,country):
+    temp_df=df.dropna(subset=["Medal"])
+    temp_df.drop_duplicates(subset=['Team','NOC','Year','City','Sport','Event','Medal'],inplace=True)
+    new_df=temp_df[temp_df['region']==country]
+    final_df=new_df.groupby("Year").count()["Medal"].reset_index()
+    return final_df
+
+
+def country_event_heatmap(df,country):
+    temp_df=df.dropna(subset=["Medal"])
+    temp_df.drop_duplicates(subset=['Team','NOC','Year','City','Sport','Event','Medal'],inplace=True)
+    new_df=temp_df[temp_df['region']==country]
+    pt=new_df.pivot_table(index="Sport",columns='Year',values='Medal',aggfunc='count').fillna(0)
+    return pt
+
+def most_successful_countrywise(df,country):
+    temp_df=df.dropna(subset=['Medal'])
+    
+    temp_df=temp_df[temp_df['region'] ==country]
+
+    x=temp_df['Name'].value_counts().reset_index().head(10).merge(df,left_on='Name',right_on='Name',how='left')[['Name','count','Sport']].drop_duplicates('Name')
+    x.rename(columns={'count':'Total medals'},inplace=True)
+    return x
+
+def age_relation_medals(df,medal):
+    athlete_df=df.drop_duplicates(subset=["Name","region"])
+    if len(medal)==0:
+        athlete_df=athlete_df[athlete_df['Medal']=="Gold"]
+    else:
+        athlete_df=athlete_df[athlete_df['Medal'].isin(medal)]
+    return athlete_df
+
+def age_relation_sport(df,sport):
+    athlete_df=df.drop_duplicates(subset=["Name","region"])
+    if len(sport)==0:
+        temp_df=athlete_df[athlete_df["Sport"].isin([ 'Basketball','Judo','Football','Tug-Of-War','Athletics', 'Swimming','Badminton','Sailing', 'Gymnastics'  ])]
+        temp_df=temp_df[temp_df["Medal"]=="Gold"][["Sport","Age"]].dropna()
+    else:
+        temp_df=athlete_df[athlete_df["Sport"].isin(sport)]
+        temp_df=temp_df[temp_df["Medal"]=="Gold"][["Sport","Age"]].dropna()
+    return temp_df
+
+
+def weight_v_height(df,sport):
+    athlete_df=df.drop_duplicates(subset=["Name","region"])
+    athlete_df["Medal"].fillna("No Medal",inplace=True)
+    if sport!='Overall':
+        temp_df=athlete_df[athlete_df['Sport']==sport]
+        return temp_df
+    else:
+        return athlete_df
+    
+
+def men_vs_women(df):
+    athlete_df=df.drop_duplicates(subset=["Name","region"])
+    men=athlete_df[athlete_df["Sex"]=="M"].groupby('Year').count()["Name"].reset_index()
+    women=athlete_df[athlete_df["Sex"]=="F"].groupby('Year').count()["Name"].reset_index()
+    final=men.merge(women,on="Year",how="left")
+    final.rename(columns={'Name_x':"Male","Name_y":"Female"},inplace=True)
+    final.fillna(0,inplace=True)
+    return final
+
+
 

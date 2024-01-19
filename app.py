@@ -16,7 +16,7 @@ df=preprocessor.preprocess(df,region_df)
 
 st.sidebar.title("Olympics Analysis")
 user_menu=st.sidebar.radio("Select an Option",
-                 ("Medal Tally","Overall Analysis","Country-wise Analysis","Athlete wise Analysis"))
+                 ("Medal Tally","Overall Analysis","Country-wise Analysis","Athlete-wise Analysis"))
 
 if user_menu == "Medal Tally":
     st.sidebar.header('Medal Tally')
@@ -85,7 +85,7 @@ if user_menu=="Overall Analysis":
     st.pyplot(ax2)
 
     st.header("Number of events over time relative to every sport ")
-    fig,ax=plt.subplots(figsize=[25,25])
+    fig,ax=plt.subplots(figsize=[20,20])
     x=df.drop_duplicates(["Year","Sport","Event"])
     ax=sns.heatmap(x.pivot_table(index='Sport',columns="Year",values="Event",aggfunc='count').fillna(0),annot=True).figure
     st.pyplot(ax)
@@ -99,4 +99,60 @@ if user_menu=="Overall Analysis":
     st.table(x)
 
 if user_menu=="Country-wise Analysis":
+    st.sidebar.title("Country-wise Analysis")
+    country_list=df['region'].dropna().unique().tolist()
+    country_list.sort()
+    selected_country=st.sidebar.selectbox("Select a Country",country_list,index=2)
+ 
+    country_df=helper.year_wise_medal_tally(df,selected_country)
+    st.title(selected_country+"'s medal tally over the years")
+    fig,ax=plt.subplots()
+    ax=sns.lineplot(data=country_df,x='Year',y='Medal').figure
+    st.pyplot(ax)
+
+
+    st.title(selected_country+"'s performance in every sport over the years")
+    p_table=helper.country_event_heatmap(df,selected_country)
+    fig,ax=plt.subplots(figsize=[20,20])
+    ax=sns.heatmap(p_table,annot=True).figure
+    st.pyplot(ax)
+
+    st.title("Top 10 Athletes of "+selected_country)
+    top10_df=helper.most_successful_countrywise(df,selected_country)
+    st.table(top10_df)
+
+
+if user_menu=="Athlete-wise Analysis":
+
+    st.title("Age Distrubution")
     
+    medals=st.sidebar.multiselect("Select the kind of Medalist",["Gold","Silver","Bronze"],default=["Gold"],)
+    
+    ndata=helper.age_relation_medals(df,medals)
+    fig,ax=plt.subplots(figsize=[12,8])
+    ax=sns.kdeplot(data=ndata,x="Age",hue="Medal",linewidth=2).figure
+    st.pyplot(ax)
+
+
+    sport_list=df['Sport'].unique().tolist()
+    sport_list.sort()
+    sport_list.insert(0,'Overall')
+    sport=st.sidebar.multiselect("Select any sport",sport_list,default=[ 'Basketball','Judo','Football','Tug-Of-War','Athletics', 'Swimming','Badminton','Sailing', 'Gymnastics'  ])
+    sport_data=helper.age_relation_sport(df,sport)
+    fig,ax=plt.subplots(figsize=[12,8])
+    ax=sns.kdeplot(data=sport_data,x="Age",hue='Sport',linewidth=2).figure
+    st.pyplot(ax)
+
+    st.title("Height vs Weight analysis")
+    selected_sport=st.selectbox("Select any sport",sport_list,index=0)
+    height_weight=helper.weight_v_height(df,selected_sport)
+    fig,ax=plt.subplots(figsize=[10,6])
+    ax=sns.scatterplot(data=height_weight,x="Weight",y="Height",hue="Medal",style="Sex",s=60).figure
+    st.pyplot(ax)
+
+    st.title("Men vs Women participation over the years")
+    dframe=helper.men_vs_women(df)
+    fig=dframe.plot(x="Year",y=["Male","Female"]).figure
+    st.pyplot(fig)
+
+
